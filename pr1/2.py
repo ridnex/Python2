@@ -17,7 +17,7 @@ if index1 >=0:
     for i in range(index1, len(ast)):
         wer+=ast[i]
     print(wer+ans+"ay")
-else:
+else :
     reverse_str = ""
     ast.reverse()
     for i in ast:
