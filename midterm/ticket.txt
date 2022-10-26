@@ -1,0 +1,14 @@
+Ticket
+Login: ridnex
+Name: Esko
+SurName: ZH
+Age: 18
+Flight ID: 300
+Airplane: A107
+Place: 17
+From City: Astana
+To City: Almaty
+Date Time: 2022-10-20 18:50:00
+Departure Time: 18:50
+Arrival Time: 20:20
+Cost: 6000
