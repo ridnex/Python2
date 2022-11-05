@@ -3,7 +3,7 @@ import mysql.connector as sql
 class DatabaseManager():
 
     def __init__(self):
-        self.db = sql.connect(host = 'localhost', user = 'root', password = '*******')
+        self.db = sql.connect(host = 'localhost', user = 'root', password = 'Esko28:)')
         self.cursor = self.db.cursor()
         self.cursor.execute("CREATE DATABASE IF NOT EXISTS airline")
         self.db.commit()
@@ -50,13 +50,19 @@ class DatabaseManager():
         self.db.commit()
 
     def select_from_flights(self, city_from = None, city_to = None, month = None):
-        part1 = 'SELECT * FROM flights'
-        part2 = f' WHERE from_city = "{city_from}"' if city_from != None else ""
-        part3 = f' AND to_city = "{city_to}"' if city_to != None else ""
-        part4 = f' AND MONTH(date_time) = {month}' if month != None else ""
-        self.cursor.execute(part1 + part2 + part3 + part4)
-        data = self.cursor.fetchall()
-        return data if len(data) != 0 else None
+        if city_from == None and city_to == None and month != None:
+            query = f'SELECT * FROM flights WHERE MONTH(date_time) = {month}'
+            self.cursor.execute(query)
+            data = self.cursor.fetchall()
+            return data if len(data) != 0 else None
+        else:
+            part1 = 'SELECT * FROM flights'
+            part2 = f' WHERE from_city = "{city_from}"' if city_from != None else ""
+            part3 = f' AND to_city = "{city_to}"' if city_to != None else ""
+            part4 = f' AND MONTH(date_time) = {month}' if month != None else ""
+            self.cursor.execute(part1 + part2 + part3 + part4)
+            data = self.cursor.fetchall()
+            return data if len(data) != 0 else None
 
     def select_from_tickets_by_flight_id(self, id):
         query = f'SELECT * FROM tickets WHERE flight_id = "{id}"'
@@ -68,7 +74,7 @@ class DatabaseManager():
         return self.cursor.fetchall()
 
     def modify_tickets_in_flights(self, flight_id, add = True):
-        query = f"UPDATE flights SET tickets = tickets - 1 WHERE flight_id = {flight_id}" if add else f"UPDATE flights SET tickets = tickets + 1 WHERE flight_id = {flight_id}"
+        query = f"UPDATE flights SET tickets = tickets - 1 WHERE flight_id = {flight_id}" if not add else f"UPDATE flights SET tickets = tickets + 1 WHERE flight_id = {flight_id}"
         self.cursor.execute(query)
         self.db.commit()
 
@@ -78,12 +84,12 @@ class DatabaseManager():
         (101, 'A502', 'Almaty', 'Astana', '2022-11-21 18:50:00', '18:50', "20:20", 60),
         (102, 'A503', 'Astana', 'Aturay', '2022-11-22 11:40:00', '11:40', "16:05", 60),
         (103, 'A504', 'Aktau', 'Aturay', '2022-11-22 14:40:00', '14:40', "18:20", 60),
-        (104, 'A505', 'Shumkent', 'Taraz', '2022-11-22 16:40:00', '16:40', "29:15", 60),
+        (104, 'A505', 'Shumkent', 'Taraz', '2022-11-22 16:40:00', '16:40', "19:15", 60),
         (105, 'A506', 'Taraz', 'Aktobe', '2022-11-23 15:45:00', '15:45', "18:30", 60),
         (106, 'A507', 'Semey', 'Karagnda', '2022-11-27 18:40:00', '18:40', "20:15", 60),
         (107, 'A508', 'Shymkent', 'Kyzylorda', '2022-11-30 21:40:00', '21:40', "23:35", 60),
         (108, 'A509', 'Taraz', 'Almaty', '2022-12-02 8:40:00 ', '8:40', "10:20", 60),
-        (109, 'A510', 'Astana', 'Semey', '2022-12-3 10:50:00', '10: 50', "14:45", 60),
+        (109, 'A510', 'Astana', 'Semey', '2022-12-3 10:50:00', '10:50', "14:45", 60),
         (110, 'A511', 'Taraz', 'Aktau', '2022-12-4 9:35:00', '9:35', "13:15", 60)
         ]
         self.insert_into_flights(values)
@@ -94,15 +100,18 @@ class DatabaseManager():
         for i in range(2, 45):
             values.append((f'{i}', f'{i}', f'{i}', f'{1}', 0, 0, 18))
         self.insert_into_passengers(values)
+        print("Data filled in passengers successfully.")
 
     def fill_tickets_table(self):
         values = []
         for i in range(2, 45):
-            values.append((f'{i}', 102, i, 4000, 'econom'))
+            DB.modify_tickets_in_flights(102, add = False)
+            values.append((f'{i}', 102, i, 4000, 'Econom class'))
         self.insert_into_tickets(values)
+        print("Data filled in tickets successfully.")
 
 
 DB = DatabaseManager()
-#DB.fill_passengers_table
+#DB.fill_passengers_table()
 #DB.fill_flights_table()
 #DB.fill_tickets_table()

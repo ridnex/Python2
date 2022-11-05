@@ -70,9 +70,10 @@ class WindowApp(Tk):
         Reg.logentry.delete(0, END)
         Reg.passentry.delete(0, END)
         Reg.realage.delete(0, END)
-        #Log.logentry.delete(0, END)
+        Log.logentry.delete(0, END)
         Log.passentry.delete(0, END)
         Menu.pack(fill = 'both', expand = 1) 
+        update_table()
 
     def switch_to_tickets(self):
         self.basic.forget()  
@@ -218,7 +219,7 @@ def cancel_tic():
         else:
             BD.delete_from_tickets_by_login(login, flight_id, place)
             print('canceled')
-            BD.modify_tickets_in_flights(flight_id, add = False)
+            BD.modify_tickets_in_flights(flight_id, add = True)
             selected_item = Tic.table.selection()[0]
             Tic.table.delete(selected_item)
             Main.switch_to_menu()
@@ -254,28 +255,19 @@ def print_tic():
         mb.showerror("Error!", "Choose one ticket")
 
 def ticket_pick(event):
-    try:
-        Menu.seat_chosen = True
-        Menu.buy_button['state'] = 'normal'
-        label_id = event.widget
-        label_id = re.sub(r'^.*label(\d*)$', r'\1', str(label_id))
-        data  = BD.select_from_tickets_by_flight_id(int(label_id))
-        print(label_id)
-        for row in data:
-            if int(label_id) in row: raise Exception
-        if len(label_id) == 0: label_id = 0
-        else: label_id = int(label_id) - 1
-        disable_seatmap()
-        Menu.seats[label_id]['borderwidth'] = 3
-        Menu.seats[label_id]['relief'] = 'solid'
-        Menu.seat_chosen_id = label_id
-    except Exception as e:
-        print(e)
-        mb.showerror("Error", "You can`t pick busy seats!")
+    Menu.seat_chosen = True
+    Menu.buy_button['state'] = 'normal'
+    label_id = event.widget
+    label_id = re.sub(r'^.*label(\d*)$', r'\1', str(label_id))
+    if len(label_id) == 0: label_id = 0
+    else: label_id = int(label_id) - 1
+    disable_seatmap()
+    Menu.seats[label_id]['borderwidth'] = 2
+    Menu.seats[label_id]['relief'] = 'solid'
+    Menu.seat_chosen_id = label_id
 
 def ticket_buy():
     res = mb.askquestion("Attention!", "Are you sure? The payment will be done automatically.")
-    #print(res)
     if str(res) == "yes":
         try:
             status = "VIP" if current_acc[-1][4] > 10 else "None"
@@ -285,28 +277,29 @@ def ticket_buy():
             if classplace == "Econom class": addition = 0
             elif classplace == "Business class": addition = 1000
             else: addition = 2000
-            print(Menu.flight_id)
-            if Menu.flight_id == None: raise Exception
+            for row in BD.select_from_tickets_by_flight_id(Menu.flight_id):
+                if row[2] == Menu.seat_chosen_id: 
+                    raise ValueError
             BD.insert_into_tickets([(current_acc[-1][0], Menu.flight_id, Menu.seat_chosen_id, int((4000 + addition) * coef), classplace)])
-            BD.modify_tickets_in_flights(Menu.flight_id, add = True)
+            BD.modify_tickets_in_flights(Menu.flight_id, add = False)
             update_table()
             table_clear()
-        except: mb.showerror("Error", "Make sure you have chosen the parameters correctly!")
+        except ValueError: mb.showerror("Error", "You have chosen busy seat!")
+        except Exception: mb.showerror("Error", "Make sure you have chosen the parameters correctly!")
 
 def disable_seatmap():
     for label in Menu.seats:
         label['relief'] = 'flat'
 
 def table_selected(event = None):
-    print("occureed")
     details = Menu.table.item(Menu.table.selection())
-    print(details)
+    print("table_selected func: ", details)
     Menu.flight_id = details.get('values')[0]
     data = BD.select_from_tickets_by_flight_id(Menu.flight_id)
     for i in range(60):
         Menu.seats[i]['bg'] = 'green'
     for row in data:
-        Menu.seats[int(row[2])]['bg'] = 'red'
+        if row[2] != 'A1': Menu.seats[int(row[2])]['bg'] = 'red'
 
 def table_clear():
     for i in Tic.table.get_children():
@@ -354,7 +347,7 @@ class MenuScreen(Frame): # menuscreen is 4x4 1200х800
         month = ttk.Combobox(self.frame_buy, textvariable = self.month_chosen)
         month.bind('<<ComboboxSelected>>', update_table)
         month['state'] = 'readonly'
-        month['values'] = months + [""] 
+        month['values'] = months + [""]
         month.grid(row = 1, column = 5, columnspan = 2, padx = 5)
 
         Label(self.frame_buy, text = 'Status:', font = ('Papyrus', 25), bg = '#BDE4F4',fg = "#10316B").grid(row = 0, column =  7, columnspan = 2)
@@ -395,7 +388,7 @@ class MenuScreen(Frame): # menuscreen is 4x4 1200х800
         for i in range(5):
             self.frame_seat.grid_columnconfigure(i, minsize = 120); self.frame_seat.grid_rowconfigure(i, minsize = 112)
         self.frame_seatmap = Frame(self.frame_seat, bg = 'white', highlightbackground = 'black', highlightthickness = 1)
-        self.frame_seatmap.grid(row = 0, column = 1, rowspan = 2, columnspan = 10, sticky = 'news')
+        self.frame_seatmap.grid(row = 0, column = 1, rowspan = 2, columnspan = 15, sticky = 'news')
         for i in range(15):
             self.frame_seatmap.grid_columnconfigure(i, minsize = 10, weight = 1)
             self.frame_seatmap.grid_rowconfigure(i, minsize = 10, weight = 1)
@@ -406,7 +399,7 @@ class MenuScreen(Frame): # menuscreen is 4x4 1200х800
         for i in range(60):
             self.seats.append(Label(self.frame_seatmap, bg = 'green', text = f'{i}'))
             self.seats[-1].bind('<Double-1>', ticket_pick)
-            self.seats[-1].grid(row = 2 + int(i / 15) + int(int(i / 15)/2), column = int(i % 15), sticky = 'enws', padx = 5, pady = 5)
+            self.seats[-1].grid(row = int(i / 15) + int(int(i / 15)/2), column = int(i % 15), sticky = 'enws', padx = 5, pady = 5)
         self.buy_button = Button(self.frame_seat, bg = '#BDE4F4', command = ticket_buy, state = 'disabled', text = 'Buy')
         self.buy_button.grid(row = 0, column = 0, sticky = 'news', padx = 7, pady = 7)
 
@@ -433,7 +426,7 @@ class Tickets(Frame):
         for header in heads: 
             self.table.heading(header, text = header, anchor = 'center')
             self.table.column(header, width = 70)
-        self.table.grid(row = 1, column = 1, columnspan = 5,rowspan=5 ,sticky = 'news')
+        self.table.grid(row = 1, column = 1, columnspan = 5, sticky = 'news')
 
 Main = WindowApp() 
  
@@ -441,5 +434,8 @@ Reg = RegScreen(Main)
 Log = LogScreen(Main) 
 Menu = MenuScreen(Main)
 Tic = Tickets(Main)
+
+
+
 
 Main.mainloop()
