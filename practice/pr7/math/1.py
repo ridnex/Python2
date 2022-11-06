@@ -1,40 +1,30 @@
+#Sum of Squares
 import math
-from re import sub
+def prime(n):
+    cnt = 0
+    for i in range(1, int(math.sqrt(n))+1):
+        if n%i==0:
+            cnt+=1
+    if cnt == 1:
+        return True
+    return False
 
-def sum_10(n:str):
-    cnt =0
-    for i in n:
-        cnt+= int(i)
+def quadrats(n):
+    k = int(math.sqrt(n))
+    if k*k==n:
+        return k
+    return -1
+
+def S_n(n):
+    cnt = 0
+    for i in range(1, int(math.sqrt(n))+1):
+        if quadrats(n-i**2)>=i:
+            cnt+=i
+
     return cnt
-
-
-def sub_10(number_string):
-    out = ''
-    for i in range(len(number_string)-1):
-        arr = (number_string[i])
-        for j in range(i+1, len(number_string)):
-            if sum_10(arr)>10:
-                arr=''
-                break
-            else:
-                arr+= str(number_string[j])
-                if sum_10(arr)==10:
-                    out+=arr
-                    arr = ""
-                    break
-    for i in number_string:
-        if i not in out:
-            return False
-        
-    return(True)
-print(sub_10('9461111'))
-# m = int(input())
-# cnt = 0
-# for n in range(1, 10**m+1):
-#     if sub_10(str(n))==True:
-#         cnt+=1
-# print(cnt)
-    
-
-
-
+cnt = 0
+for i in range(1, 37):
+    n = i*4+1
+    if prime(n)==True:
+        cnt+=S_n(n)
+print(cnt)
